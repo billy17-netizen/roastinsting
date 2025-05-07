@@ -40,13 +40,15 @@ export async function POST(request: Request) {
     });
     
   } catch (error) {
+    console.error('Server error:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json({ error: 'Internal server error: ' + (error instanceof Error ? error.message : 'Unknown error') }, { status: 500 });
   }
 }
 
 interface InstagramPost {
   caption?: string;
-  [key: string]: any;
+  text?: string;
+  [key: string]: unknown;
 }
 
 interface InstagramUserData {
@@ -63,12 +65,19 @@ interface InstagramUserData {
   profilePicture?: string;
   profileImageUrl?: string;
   latestPosts?: InstagramPost[];
-  posts?: any[];
+  posts?: InstagramPost[];
   isVerified?: boolean;
-  [key: string]: any;
+  name?: string;
+  followsCount?: number;
+  profilePicUrlHD?: string;
+  [key: string]: unknown;
 }
 
-async function fetchInstagramData(username: string) {
+interface ApifyRunResult {
+  defaultDatasetId: string;
+}
+
+async function fetchInstagramData(username: string): Promise<InstagramUserData | null> {
   try {
     // Using the specific Actor ID provided in the example
     const run = await apifyClient.actor("dSCLg0C3YEZ83HzYX").call({
@@ -78,7 +87,7 @@ async function fetchInstagramData(username: string) {
         useApifyProxy: true,
         apifyProxyGroups: ['RESIDENTIAL']
       }
-    });
+    }) as unknown as ApifyRunResult;
     
     const dataset = await apifyClient.dataset(run.defaultDatasetId).listItems();
     
@@ -86,27 +95,31 @@ async function fetchInstagramData(username: string) {
       return null;
     }
 
-    const userData = dataset.items[0] as InstagramUserData;
+    const rawUserData = dataset.items[0];
     
     // Transform data to match our app's expected format
-    return {
-      username: userData.username,
-      fullName: userData.fullName || userData.name || '',
-      biography: userData.biography || userData.bio || '',
-      followersCount: userData.followersCount || userData.followers || 0,
-      followingCount: userData.followsCount || userData.following || 0,
-      postsCount: userData.postsCount || (userData.posts?.length || 0),
+    const userData: InstagramUserData = {
+      username: String(rawUserData.username || username),
+      fullName: String(rawUserData.fullName || rawUserData.name || ''),
+      biography: String(rawUserData.biography || rawUserData.bio || ''),
+      followersCount: Number(rawUserData.followersCount || rawUserData.followers || 0),
+      followingCount: Number(rawUserData.followsCount || rawUserData.following || 0),
+      postsCount: Number(rawUserData.postsCount || (Array.isArray(rawUserData.posts) ? rawUserData.posts.length : 0)),
       // Profile pic could be in different fields depending on the actor
-      profilePictureUrl: userData.profilePicUrl || userData.profilePicUrlHD || userData.profileImageUrl || '',
-      latestPosts: userData.latestPosts || userData.posts?.slice(0, 5) || [],
-      isVerified: userData.isVerified || false,
+      profilePictureUrl: String(rawUserData.profilePicUrl || rawUserData.profilePicUrlHD || rawUserData.profileImageUrl || ''),
+      latestPosts: (Array.isArray(rawUserData.latestPosts) ? rawUserData.latestPosts : 
+                   Array.isArray(rawUserData.posts) ? rawUserData.posts.slice(0, 5) : []) as InstagramPost[],
+      isVerified: Boolean(rawUserData.isVerified || false),
     };
+    
+    return userData;
   } catch (error) {
+    console.error("Error fetching Instagram data:", error instanceof Error ? error.message : "Unknown error");
     return null;
   }
 }
 
-async function generateRoast(instagramData: any) {
+async function generateRoast(instagramData: InstagramUserData): Promise<string> {
   try {
     // Fix the model name to use a valid Gemini model
     const model = googleAI.getGenerativeModel({ model: "gemini-2.0-flash" });
@@ -123,7 +136,7 @@ async function generateRoast(instagramData: any) {
       Verified: ${instagramData.isVerified ? 'Yes' : 'No'}
       
       Latest Post Captions:
-      ${instagramData.latestPosts.map((post: InstagramPost) => post.caption || post.text || 'No caption').join('\n')}
+      ${instagramData.latestPosts?.map((post: InstagramPost) => post.caption || post.text || 'No caption').join('\n') || 'No posts found'}
     `;
 
     const result = await model.generateContent(prompt);
@@ -132,6 +145,7 @@ async function generateRoast(instagramData: any) {
     
     return text;
   } catch (error) {
+    console.error("Error generating roast:", error instanceof Error ? error.message : "Unknown error");
     return "Maaf, saya tidak dapat membuat roast untuk akun ini. Silakan coba lagi nanti.";
   }
 } 

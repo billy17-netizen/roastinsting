@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
@@ -8,7 +8,7 @@ interface InstagramPost {
   caption?: string;
   imageUrl?: string;
   text?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface InstagramData {
@@ -23,7 +23,49 @@ interface InstagramData {
   isVerified: boolean;
 }
 
-export default function ResultsPage() {
+// Loading fallback component
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-[#FFDE59] text-black p-3 md:p-8 font-mono flex items-center justify-center">
+      <div className="text-center">
+        <div className="custom-loader mx-auto mb-4"></div>
+        <p className="font-bold text-xl">Memuat...</p>
+        <style jsx>{`
+          .custom-loader {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto;
+            background: 
+              linear-gradient(#000 0 0) center/100% 8px,
+              linear-gradient(#000 0 0) center/8px 100%;
+            background-repeat: no-repeat;
+            position: relative;
+            animation: rotateBlade 1s linear infinite;
+          }
+          
+          .custom-loader::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            margin: auto;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #FF5757;
+            border: 4px solid #000;
+          }
+          
+          @keyframes rotateBlade {
+            to { transform: rotate(90deg); }
+          }
+        `}</style>
+      </div>
+    </div>
+  );
+}
+
+// Component that uses searchParams
+function ResultsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const username = searchParams.get('username');
@@ -33,11 +75,6 @@ export default function ResultsPage() {
   const [error, setError] = useState('');
   const [instagramData, setInstagramData] = useState<InstagramData | null>(null);
   const [roast, setRoast] = useState('');
-
-  // Function to get caption text from post (different scraper actors use different fields)
-  const getPostCaption = (post: InstagramPost): string => {
-    return post.caption || post.text || 'No caption';
-  };
 
   // Function to proxy Instagram image URLs through our own API to avoid CORS issues
   const getProxiedImageUrl = (originalUrl: string) => {
@@ -455,7 +492,7 @@ export default function ResultsPage() {
                   {/* Biography */}
                   {instagramData.biography && (
                     <div className="w-full mb-6 bg-[#000000] text-white p-4 border-2 border-black animate-slide-in" style={{ animationDelay: '0.4s' }}>
-                      <p className="text-sm leading-snug break-words">"{instagramData.biography}"</p>
+                      <p className="text-sm leading-snug break-words">&quot;{instagramData.biography}&quot;</p>
                     </div>
                   )}
                   
@@ -591,11 +628,20 @@ export default function ResultsPage() {
             </div>
             
             <p className="text-xs md:text-sm text-center sm:text-right mt-3 md:mt-4">
-              API keys untuk Apify & Gemini diperlukan. Tidak ada data yang disimpan.
+              API keys untuk Apify &amp; Gemini diperlukan. Tidak ada data yang disimpan.
             </p>
           </div>
       </footer>
       </div>
     </main>
+  );
+}
+
+// Main component with Suspense
+export default function ResultsPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <ResultsContent />
+    </Suspense>
   );
 } 

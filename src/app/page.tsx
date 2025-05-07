@@ -4,13 +4,18 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 // import Image from 'next/image'; // Image component might not be strictly Neubrutalist, using <img> for simplicity
 
+// Unused but kept for reference
+/*
 interface InstagramPost {
   caption?: string;
   imageUrl?: string;
   text?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
+*/
 
+// Used for reference only
+/* 
 interface InstagramData {
   username: string;
   fullName: string;
@@ -22,12 +27,16 @@ interface InstagramData {
   latestPosts: InstagramPost[];
   isVerified: boolean;
 }
+*/
 
+// Constants kept for reference
+/* 
 const NEUBRUTALIST_ACCENT_COLOR = 'bg-yellow-400';
 const NEUBRUTALIST_ACCENT_TEXT_COLOR = 'text-black';
 const NEUBRUTALIST_BORDER_COLOR = 'border-black';
 const NEUBRUTALIST_BACKGROUND_COLOR = 'bg-[#F5F5F5]'; // Off-white
 const NEUBRUTALIST_CARD_BACKGROUND = 'bg-white';
+*/
 
 export default function Home() {
   const router = useRouter();
@@ -54,8 +63,6 @@ export default function Home() {
       setLoading(false);
     }
   };
-
-  const neubrutalistBoxShadow = '4px 4px 0px #000';
 
   return (
     <main className="min-h-screen bg-[#FFDE59] text-black p-3 md:p-8 font-mono relative overflow-hidden">
@@ -337,7 +344,7 @@ export default function Home() {
                   <span className="font-black text-xl">2</span>
                 </div>
                 <div className="border-4 border-black p-3 pl-8 md:p-4 md:pl-10">
-                  <p className="font-bold text-base md:text-lg">Klik tombol "Dapatkan Roast" untuk memulai proses</p>
+                  <p className="font-bold text-base md:text-lg">Klik tombol &quot;Dapatkan Roast&quot; untuk memulai proses</p>
                 </div>
               </div>
               
@@ -407,7 +414,7 @@ export default function Home() {
             </div>
             
             <p className="text-xs md:text-sm text-center sm:text-right mt-3 md:mt-4">
-              API keys untuk Apify & Gemini diperlukan. Tidak ada data yang disimpan.
+              API keys untuk Apify &amp; Gemini diperlukan. Tidak ada data yang disimpan.
             </p>
           </div>
       </footer>

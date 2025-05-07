@@ -28,8 +28,9 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
+    console.error('Image proxy error:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json(
-      { error: 'Failed to proxy image' },
+      { error: `Failed to proxy image: ${error instanceof Error ? error.message : 'Unknown error'}` },
       { status: 500 }
     );
   }
